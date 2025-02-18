@@ -426,9 +426,8 @@ function Deconstructor() {
   const handleWordSubmit = async (word: string) => {
     console.log("handleWordSubmit", word);
     try {
-      const data = await fetch("/api", {
-        method: "POST",
-        body: JSON.stringify({ word }),
+      const data = await fetch(`/api/${word}`, {
+        method: "GET",
       });
       if (!data.ok) {
         throw new Error(await data.text());
