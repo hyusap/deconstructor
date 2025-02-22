@@ -17,6 +17,7 @@ Before you begin, ensure you have:
 
 - Node.js 18+ installed
 - An OpenRouter API key (get one at [OpenRouter](https://openrouter.ai))
+- A Google Gemini API key (get one at [Google AI Studio](https://aistudio.google.com/app/apikey))
 
 ## Getting Started
 
@@ -39,7 +40,15 @@ bun install
 cp example.env .env.local
 ```
 
-Then edit `.env.local` and add your OpenRouter API key.
+Then edit `.env.local` and add your API keys:
+```env
+# Get your OpenRouter API key from https://openrouter.ai/
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+
+# Get your Gemini API key from https://aistudio.google.com/app/apikey
+GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key_here
+```
+
 
 4. Run the development server:
 
