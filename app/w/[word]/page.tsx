@@ -11,5 +11,11 @@ export default async function WordPage({
     return <div>No word provided</div>;
   }
 
-  return <WordDeconstructor word={word} />;
+  // Decode URL-encoded and plus-encoded characters
+  let decodedWord = word.replace(/%2B/gi, " ");
+  decodedWord = decodedWord.replace(/\+/gi, " ");
+  decodedWord = decodeURIComponent(decodedWord);
+  console.log("decodedWord", decodedWord);
+
+  return <WordDeconstructor word={decodedWord} />;
 }
