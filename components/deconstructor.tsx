@@ -429,6 +429,13 @@ function Deconstructor({ word }: { word?: string }) {
   const handleWordSubmit = async (word: string) => {
     console.log("handleWordSubmit", word);
     try {
+      // Update URL without navigation
+      window.history.pushState(
+        {},
+        "",
+        `/w/${encodeURIComponent(word).replace(/%20/g, "+")}`
+      );
+
       const data = await fetch("/api", {
         method: "POST",
         body: JSON.stringify({ word }),
