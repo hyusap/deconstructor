@@ -19,6 +19,7 @@
     "ai": "^4.1.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "html-to-image": "^1.11.13",
     "jotai": "^2.12.0",
     "lucide-react": "^0.475.0",
     "next": "15.1.6",

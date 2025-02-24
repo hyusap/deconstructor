@@ -528,13 +528,12 @@ function Deconstructor({ word }: { word?: string }) {
     </ReactFlow>
   );
 }
-
 export default function WordDeconstructor({ word }: { word?: string }) {
   const [isLoading] = useAtom(isLoadingAtom);
 
   return (
     <div
-      className="h-screen bg-gray-900 text-gray-100"
+      className="h-screen bg-gray-900 text-gray-100 relative"
       style={
         { "--loading-state": isLoading ? "1" : "0" } as React.CSSProperties
       }
@@ -543,6 +542,15 @@ export default function WordDeconstructor({ word }: { word?: string }) {
         <ReactFlowProvider>
           <Deconstructor word={word} />
         </ReactFlowProvider>
+      </div>
+      <div
+        id="disclaimer"
+        className="absolute bottom-2 left-0 text-center w-full text-gray-500"
+      >
+        <p>
+          deconstructor can make mistakes. always double-check important
+          information.
+        </p>
       </div>
     </div>
   );
