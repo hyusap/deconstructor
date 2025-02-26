@@ -20,6 +20,8 @@ import { atom, useAtom } from "jotai";
 import Spinner from "./spinner";
 import { toast } from "sonner";
 import { usePlausible } from "next-plausible";
+import { EmailDialog } from "./email-dialog";
+import { useLocalStorage } from "@/utils/use-local-storage";
 
 const isLoadingAtom = atom(false);
 
@@ -101,14 +103,18 @@ const CombinedNode = ({
 const InputNode = ({
   data,
 }: {
-  data: { onSubmit: (word: string) => Promise<void>; initialWord?: string };
+  data: {
+    onSubmit: (word: string) => Promise<void>;
+    initialWord?: string;
+    isDisabled?: boolean;
+  };
 }) => {
   const [word, setWord] = useState(data.initialWord || "");
   const [isLoading, setIsLoading] = useAtom(isLoadingAtom);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!word.trim()) return;
+    if (!word.trim() || data.isDisabled) return;
 
     setIsLoading(true);
     await Promise.all([
@@ -130,16 +136,16 @@ const InputNode = ({
         onChange={(e) => setWord(e.target.value)}
         placeholder="Enter a word..."
         className="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border border-gray-700/50 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-        disabled={isLoading}
+        disabled={isLoading || data.isDisabled}
       />
       <button
         type="submit"
-        disabled={isLoading}
+        disabled={isLoading || data.isDisabled}
         className={`w-[100px] px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-50 transition-colors flex items-center justify-center ${
-          isLoading ? "cursor-not-allowed" : ""
+          isLoading || data.isDisabled ? "cursor-not-allowed" : ""
         }`}
       >
-        {isLoading ? <Spinner /> : "Analyze"}
+        {isLoading ? <Spinner /> : data.isDisabled ? "Locked" : "Analyze"}
       </button>
       {/* <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} /> */}
     </form>
@@ -331,7 +337,8 @@ const defaultDefinition: Definition = {
 function createInitialNodes(
   definition: Definition,
   handleWordSubmit: (word: string) => void,
-  initialWord?: string
+  initialWord?: string,
+  isInputDisabled?: boolean
 ) {
   const initialNodes: Node[] = [];
   const initialEdges: Edge[] = [];
@@ -340,7 +347,11 @@ function createInitialNodes(
     id: "input1",
     type: "inputNode",
     position: { x: 0, y: 0 },
-    data: { onSubmit: handleWordSubmit, initialWord },
+    data: {
+      onSubmit: handleWordSubmit,
+      initialWord,
+      isDisabled: isInputDisabled,
+    },
   });
 
   // Add word parts and their origins
@@ -423,11 +434,30 @@ const nodeTypes = {
 
 function Deconstructor({ word }: { word?: string }) {
   const [isLoading, setIsLoading] = useAtom(isLoadingAtom);
-
   const [definition, setDefinition] = useState<Definition>(defaultDefinition);
+  const [wordCount, setWordCount] = useLocalStorage(
+    "deconstructedWordsCount",
+    0
+  );
+  const [emailSubmitted, setEmailSubmitted] = useLocalStorage(
+    "emailSubmitted",
+    false
+  );
+  const [showEmailDialog, setShowEmailDialog] = useState<boolean>(false);
   const plausible = usePlausible();
+
+  // Check if input should be disabled (5+ words and email not submitted)
+  const isInputDisabled = wordCount >= 5 && !emailSubmitted;
+
   const handleWordSubmit = async (word: string) => {
     console.log("handleWordSubmit", word);
+
+    // Prevent further deconstruction if email not submitted after 5 words
+    if (isInputDisabled) {
+      setShowEmailDialog(true);
+      return;
+    }
+
     try {
       // Update URL without navigation
       window.history.pushState(
@@ -457,6 +487,16 @@ function Deconstructor({ word }: { word?: string }) {
         },
       });
 
+      // Increment word count and check if we need to show the email dialog
+      const newCount = wordCount + 1;
+      setWordCount(newCount);
+
+      // Check if user has deconstructed 5 words and hasn't submitted email yet
+      if (newCount >= 5 && !emailSubmitted) {
+        setShowEmailDialog(true);
+        plausible("email_prompt_shown");
+      }
+
       setDefinition(newDefinition);
     } catch {
       plausible("deconstruct_error", {
@@ -481,8 +521,9 @@ function Deconstructor({ word }: { word?: string }) {
   }, [word]);
 
   const { initialNodes, initialEdges } = useMemo(
-    () => createInitialNodes(definition, handleWordSubmit, word),
-    [definition, word]
+    () =>
+      createInitialNodes(definition, handleWordSubmit, word, isInputDisabled),
+    [definition, word, isInputDisabled]
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
@@ -515,21 +556,31 @@ function Deconstructor({ word }: { word?: string }) {
   console.log(nodes);
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      nodeTypes={nodeTypes}
-      className="bg-gray-900"
-      proOptions={{ hideAttribution: true }}
-    >
-      <Background color="#333" />
-    </ReactFlow>
+    <>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        nodeTypes={nodeTypes}
+        className="bg-gray-900"
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background color="#333" />
+      </ReactFlow>
+
+      <EmailDialog
+        open={showEmailDialog}
+        onOpenChange={setShowEmailDialog}
+        wordCount={wordCount}
+      />
+    </>
   );
 }
+
 export default function WordDeconstructor({ word }: { word?: string }) {
   const [isLoading] = useAtom(isLoadingAtom);
+  const [wordCount] = useLocalStorage("deconstructedWordsCount", 0);
 
   return (
     <div

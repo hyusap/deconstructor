@@ -34,6 +34,7 @@ export default function RootLayout({
           trackOutboundLinks
           selfHosted
           taggedEvents
+          enabled
         />
       </head>
       <body className={`${notoSerif.className} antialiased dark`}>
