@@ -571,7 +571,14 @@ function Deconstructor({ word }: { word?: string }) {
 
       <EmailDialog
         open={showEmailDialog}
-        onOpenChange={setShowEmailDialog}
+        onOpenChange={(open) => {
+          setShowEmailDialog(open);
+          if (!open) {
+            setEmailSubmitted(true);
+            // refresh the page
+            window.location.reload();
+          }
+        }}
         wordCount={wordCount}
       />
     </>
