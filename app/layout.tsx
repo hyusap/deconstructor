@@ -10,13 +10,68 @@ const notoSerif = Noto_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "deconstructor.",
-  description: "truly understand language.",
+  title: "Word Deconstructor - Interactive Etymology & Linguistic Analysis",
+  description:
+    "Discover the etymology and origins of any word with our interactive deconstructor. Explore word parts, meanings, and linguistic roots from Latin, Greek, and other languages through beautiful visualizations.",
+  keywords: [
+    "etymology",
+    "word origin",
+    "linguistic analysis",
+    "word deconstruction",
+    "language roots",
+    "word meaning",
+    "Latin etymology",
+    "Greek etymology",
+    "word parts",
+    "morphology",
+    "lexicology",
+  ].join(", "),
+  authors: [{ name: "Word Deconstructor" }],
+  creator: "Word Deconstructor",
+  publisher: "Word Deconstructor",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL("https://deconstructor.vercel.app"),
+  alternates: {
+    canonical: "https://deconstructor.vercel.app",
+  },
   openGraph: {
-    title: "deconstructor.",
-    siteName: "deconstructor.",
-    description: "truly understand language.",
-    images: "/og.png",
+    title: "Word Deconstructor - Interactive Etymology Analysis",
+    siteName: "Word Deconstructor",
+    description:
+      "Discover the etymology and origins of any word with interactive visualizations. Explore linguistic roots and word meanings.",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "Word Deconstructor - Interactive Etymology Analysis",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Word Deconstructor - Interactive Etymology Analysis",
+    description:
+      "Discover the etymology and origins of any word with interactive visualizations.",
+    images: ["/og.png"],
+    site: "@deconstructor",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 

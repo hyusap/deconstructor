@@ -1,5 +1,5 @@
 import WordDeconstructor from "@/components/deconstructor";
-import { getStaticWordPaths, getCachedWordData, generateWordMetadata } from "@/utils/static-data";
+import { getStaticWordPaths, getCachedWordData, generateWordMetadata, generateWordStructuredData } from "@/utils/static-data";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -63,9 +63,19 @@ export default async function WordPage({
   }
 
   return (
-    <WordDeconstructor 
-      word={decodedWord} 
-      staticData={staticWordData?.graph}
-    />
+    <>
+      {staticWordData && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(generateWordStructuredData(staticWordData)),
+          }}
+        />
+      )}
+      <WordDeconstructor 
+        word={decodedWord} 
+        staticData={staticWordData?.graph}
+      />
+    </>
   );
 }

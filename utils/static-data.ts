@@ -125,29 +125,121 @@ export function generateWordMetadata(wordData: CachedWord) {
     ? graph.combinations[graph.combinations.length - 1][0]?.definition 
     : `Word parts: ${partsDescription}`;
 
+  const origins = [...new Set(graph.parts.map(p => p.origin))];
+  const rootWords = graph.parts.map(p => p.originalWord);
+  
+  // Create more detailed description
+  const detailedDescription = `Explore the etymology of "${word}" - ${finalDefinition}. This word consists of ${graph.parts.length} parts from ${origins.join(" and ")} origins: ${graph.parts.map(p => `"${p.text}" (${p.originalWord}: ${p.meaning})`).join(", ")}. Interactive linguistic analysis with visual word breakdown.`;
+
   return {
-    title: `${word.charAt(0).toUpperCase() + word.slice(1)} - Etymology & Word Deconstruction`,
-    description: `Discover the etymology of "${word}": ${finalDefinition}. Interactive breakdown showing ${graph.parts.length} word parts from origins like ${[...new Set(graph.parts.map(p => p.origin))].join(", ")}.`,
+    title: `${word.charAt(0).toUpperCase() + word.slice(1)} Etymology: Origins & Meaning | Word Deconstructor`,
+    description: detailedDescription.length > 160 
+      ? `Discover the etymology of "${word}": ${finalDefinition}. Interactive breakdown showing ${graph.parts.length} word parts from ${origins.join(", ")} origins.`
+      : detailedDescription,
     keywords: [
       word,
       "etymology",
       "word origin",
       "linguistic analysis",
       "word deconstruction",
-      ...graph.parts.map(p => p.originalWord),
-      ...new Set(graph.parts.map(p => p.origin))
+      "word meaning",
+      "language roots",
+      ...rootWords,
+      ...origins.map(o => `${o} etymology`),
+      `${word} meaning`,
+      `${word} origin`,
+      `${word} etymology`
     ].join(", "),
     openGraph: {
-      title: `Etymology of "${word}"`,
+      title: `Etymology of "${word}" - Interactive Word Analysis`,
       description: finalDefinition,
       type: "article",
       publishedTime: wordData.created_at,
       modifiedTime: wordData.updated_at,
+      siteName: "Word Deconstructor",
+      locale: "en_US",
     },
     twitter: {
       card: "summary_large_image",
       title: `Etymology of "${word}"`,
       description: finalDefinition,
+      site: "@deconstructor", // Add your Twitter handle if you have one
+    },
+    alternates: {
+      canonical: `https://deconstructor.vercel.app/w/${encodeURIComponent(word).replace(/%20/g, "+")}`,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+  };
+}
+
+/**
+ * Generate JSON-LD structured data for a word
+ */
+export function generateWordStructuredData(wordData: CachedWord) {
+  const { word, graph } = wordData;
+  
+  const finalDefinition = graph.combinations.length > 0 
+    ? graph.combinations[graph.combinations.length - 1][0]?.definition 
+    : `Word consisting of parts: ${graph.parts.map(p => p.text).join(", ")}`;
+
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "DefinedTerm",
+    "name": word,
+    "description": finalDefinition,
+    "inDefinedTermSet": {
+      "@type": "DefinedTermSet",
+      "name": "Etymology Dictionary",
+      "description": "Interactive word etymology and deconstruction database"
+    },
+    "termCode": word,
+    "url": `https://deconstructor.vercel.app/w/${encodeURIComponent(word).replace(/%20/g, "+")}`,
+    "dateCreated": wordData.created_at,
+    "dateModified": wordData.updated_at,
+    "creator": {
+      "@type": "Organization",
+      "name": "Word Deconstructor",
+      "url": "https://deconstructor.vercel.app"
+    },
+    "mainEntity": {
+      "@type": "Article",
+      "headline": `Etymology of ${word}`,
+      "description": finalDefinition,
+      "author": {
+        "@type": "Organization",
+        "name": "Word Deconstructor AI"
+      },
+      "datePublished": wordData.created_at,
+      "dateModified": wordData.updated_at,
+      "articleSection": "Etymology",
+      "keywords": [...new Set([
+        word,
+        "etymology",
+        "word origin",
+        ...graph.parts.map(p => p.origin),
+        ...graph.parts.map(p => p.originalWord)
+      ])],
+      "about": graph.parts.map(part => ({
+        "@type": "DefinedTerm",
+        "name": part.originalWord,
+        "description": part.meaning,
+        "inDefinedTermSet": {
+          "@type": "DefinedTermSet",
+          "name": `${part.origin} Etymology`
+        }
+      }))
     }
   };
+
+  return structuredData;
 }

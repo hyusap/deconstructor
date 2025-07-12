@@ -1,0 +1,24 @@
+User-agent: *
+Allow: /
+Allow: /w/*
+
+# Sitemap location
+Sitemap: https://deconstructor.vercel.app/sitemap.xml
+
+# Crawl-delay to prevent overwhelming the server
+Crawl-delay: 1
+
+# Allow crawling of static assets
+Allow: /_next/static/
+Allow: /favicon.ico
+Allow: /og.png
+
+# Disallow crawling of API routes (since they're not meant for SEO)
+Disallow: /api/
+
+# Additional instructions for search engines
+# Priority pages for crawling
+Allow: /w/
+
+# Cache policy for robots
+# Allow: /sitemap.xml
