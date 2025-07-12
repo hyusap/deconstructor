@@ -10,7 +10,7 @@ const notoSerif = Noto_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Word Deconstructor - Interactive Etymology & Linguistic Analysis",
+  title: "Deconstructor - Etymology & Linguistic Analysis",
   description:
     "Discover the etymology and origins of any word with our interactive deconstructor. Explore word parts, meanings, and linguistic roots from Latin, Greek, and other languages through beautiful visualizations.",
   keywords: [
@@ -26,21 +26,21 @@ export const metadata: Metadata = {
     "morphology",
     "lexicology",
   ].join(", "),
-  authors: [{ name: "Word Deconstructor" }],
-  creator: "Word Deconstructor",
-  publisher: "Word Deconstructor",
+  authors: [{ name: "Ayush Paul" }],
+  creator: "Ayush Paul",
+  publisher: "Ayush Paul",
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://deconstructor.vercel.app"),
+  metadataBase: new URL("https://deconstructor.app"),
   alternates: {
-    canonical: "https://deconstructor.vercel.app",
+    canonical: "https://deconstructor.app",
   },
   openGraph: {
-    title: "Word Deconstructor - Interactive Etymology Analysis",
-    siteName: "Word Deconstructor",
+    title: "Deconstructor - Interactive Etymology Analysis",
+    siteName: "Deconstructor",
     description:
       "Discover the etymology and origins of any word with interactive visualizations. Explore linguistic roots and word meanings.",
     images: [
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
         url: "/og.png",
         width: 1200,
         height: 630,
-        alt: "Word Deconstructor - Interactive Etymology Analysis",
+        alt: "Deconstructor - Interactive Etymology Analysis",
       },
     ],
     locale: "en_US",
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Word Deconstructor - Interactive Etymology Analysis",
+    title: "Deconstructor - Interactive Etymology Analysis",
     description:
       "Discover the etymology and origins of any word with interactive visualizations.",
     images: ["/og.png"],
@@ -84,7 +84,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <PlausibleProvider
-          domain="deconstructor.ayush.digital"
+          domain="deconstructor.app"
           customDomain="https://a.ayush.digital"
           trackOutboundLinks
           selfHosted

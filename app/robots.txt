@@ -3,7 +3,7 @@ Allow: /
 Allow: /w/*
 
 # Sitemap location
-Sitemap: https://deconstructor.vercel.app/sitemap.xml
+Sitemap: https://deconstructor.app/sitemap.xml
 
 # Crawl-delay to prevent overwhelming the server
 Crawl-delay: 1

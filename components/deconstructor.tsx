@@ -25,12 +25,6 @@ import { useLocalStorage } from "@/utils/use-local-storage";
 
 const isLoadingAtom = atom(false);
 
-type Combination = {
-  id: string;
-  text: string;
-  definition: string;
-  sourceIds: string[];
-};
 
 const WordChunkNode = ({ data }: { data: { text: string } }) => {
   const [isLoading] = useAtom(isLoadingAtom);
@@ -104,21 +98,29 @@ const InputNode = ({
   data,
 }: {
   data: {
-    onSubmit: (word: string) => Promise<void>;
+    onSubmit: (word: string, forceUpdate?: boolean) => Promise<void>;
     initialWord?: string;
     isDisabled?: boolean;
+    hasAnalyzed?: boolean;
+    analyzedWord?: string;
   };
 }) => {
   const [word, setWord] = useState(data.initialWord || "");
   const [isLoading, setIsLoading] = useAtom(isLoadingAtom);
+  
+  // Check if current word matches the analyzed word
+  const isCurrentWordAnalyzed = data.hasAnalyzed && word.trim().toLowerCase() === data.analyzedWord?.toLowerCase();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!word.trim() || data.isDisabled) return;
 
+    // If this word has already been analyzed, treat as regeneration
+    const forceUpdate = isCurrentWordAnalyzed;
+
     setIsLoading(true);
     await Promise.all([
-      data.onSubmit(word),
+      data.onSubmit(word, forceUpdate),
       new Promise((resolve) => setTimeout(resolve, 1000)),
     ]);
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -141,11 +143,20 @@ const InputNode = ({
       <button
         type="submit"
         disabled={isLoading || data.isDisabled}
-        className={`w-[100px] px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-50 transition-colors flex items-center justify-center ${
+        className={`w-[120px] px-4 py-2 rounded-lg ${isCurrentWordAnalyzed ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700'} text-white font-medium disabled:opacity-50 transition-colors flex items-center justify-center ${
           isLoading || data.isDisabled ? "cursor-not-allowed" : ""
         }`}
+        title={isCurrentWordAnalyzed ? "Generate a new analysis with fresh AI interpretation" : "Analyze this word"}
       >
-        {isLoading ? <Spinner /> : data.isDisabled ? "Locked" : "Analyze"}
+        {isLoading ? (
+          <Spinner />
+        ) : data.isDisabled ? (
+          "Locked"
+        ) : isCurrentWordAnalyzed ? (
+          "Try Again"
+        ) : (
+          "Analyze"
+        )}
       </button>
       {/* <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} /> */}
     </form>
@@ -336,9 +347,11 @@ const defaultDefinition: Definition = {
 
 function createInitialNodes(
   definition: Definition,
-  handleWordSubmit: (word: string) => void,
+  handleWordSubmit: (word: string, forceUpdate?: boolean) => void,
   initialWord?: string,
-  isInputDisabled?: boolean
+  isInputDisabled?: boolean,
+  hasAnalyzed?: boolean,
+  analyzedWord?: string
 ) {
   const initialNodes: Node[] = [];
   const initialEdges: Edge[] = [];
@@ -351,6 +364,8 @@ function createInitialNodes(
       onSubmit: handleWordSubmit,
       initialWord,
       isDisabled: isInputDisabled,
+      hasAnalyzed,
+      analyzedWord,
     },
   });
 
@@ -435,6 +450,8 @@ const nodeTypes = {
 function Deconstructor({ word, staticData }: { word?: string; staticData?: Definition }) {
   const [isLoading, setIsLoading] = useAtom(isLoadingAtom);
   const [definition, setDefinition] = useState<Definition>(defaultDefinition);
+  const [hasAnalyzed, setHasAnalyzed] = useState<boolean>(false);
+  const [currentWord, setCurrentWord] = useState<string | undefined>(word);
   const [wordCount, setWordCount] = useLocalStorage(
     "deconstructedWordsCount",
     0
@@ -449,8 +466,8 @@ function Deconstructor({ word, staticData }: { word?: string; staticData?: Defin
   // Check if input should be disabled (5+ words and email not submitted)
   const isInputDisabled = wordCount >= 5 && !emailSubmitted;
 
-  const handleWordSubmit = async (word: string) => {
-    console.log("handleWordSubmit", word);
+  const handleWordSubmit = async (word: string, forceUpdate = false) => {
+    console.log("handleWordSubmit", word, "forceUpdate:", forceUpdate);
 
     // Prevent further deconstruction if email not submitted after 5 words
     if (isInputDisabled) {
@@ -468,15 +485,27 @@ function Deconstructor({ word, staticData }: { word?: string; staticData?: Defin
 
       const data = await fetch("/api", {
         method: "POST",
-        body: JSON.stringify({ word }),
+        body: JSON.stringify({ word, update: forceUpdate }),
       });
+      
+      if (forceUpdate) {
+        plausible("regenerate_word", {
+          props: {
+            word,
+          },
+        });
+      }
       if (!data.ok) {
         throw new Error(await data.text());
       }
       if (data.status === 203) {
         toast.info(
-          "The AI had some issues, but here's what it came up with anyway."
+          forceUpdate 
+            ? "Still having issues, but here's a new attempt!"
+            : "The AI had some issues, but here's what it came up with anyway."
         );
+      } else if (forceUpdate) {
+        toast.success("Generated a new analysis!");
       }
       const newDefinition = (await data.json()) as Definition;
       console.log("newDefinition", newDefinition);
@@ -498,6 +527,8 @@ function Deconstructor({ word, staticData }: { word?: string; staticData?: Defin
       }
 
       setDefinition(newDefinition);
+      setHasAnalyzed(true);
+      setCurrentWord(word);
     } catch {
       plausible("deconstruct_error", {
         props: {
@@ -513,6 +544,8 @@ function Deconstructor({ word, staticData }: { word?: string; staticData?: Defin
   useEffect(() => {
     if (staticData && word) {
       setDefinition(staticData);
+      setHasAnalyzed(true);
+      setCurrentWord(word);
       return;
     }
     
@@ -526,10 +559,17 @@ function Deconstructor({ word, staticData }: { word?: string; staticData?: Defin
     fetchDefinition();
   }, [word, staticData]);
 
+  // Reset hasAnalyzed when word changes (but not on initial load)
+  useEffect(() => {
+    if (word !== currentWord && currentWord !== undefined) {
+      setHasAnalyzed(false);
+    }
+  }, [word, currentWord]);
+
   const { initialNodes, initialEdges } = useMemo(
     () =>
-      createInitialNodes(definition, handleWordSubmit, word, isInputDisabled),
-    [definition, word, isInputDisabled]
+      createInitialNodes(definition, handleWordSubmit, currentWord, isInputDisabled, hasAnalyzed, currentWord),
+    [definition, currentWord, isInputDisabled, hasAnalyzed]
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
@@ -593,7 +633,6 @@ function Deconstructor({ word, staticData }: { word?: string; staticData?: Defin
 
 export default function WordDeconstructor({ word, staticData }: { word?: string; staticData?: Definition }) {
   const [isLoading] = useAtom(isLoadingAtom);
-  const [wordCount] = useLocalStorage("deconstructedWordsCount", 0);
 
   return (
     <div

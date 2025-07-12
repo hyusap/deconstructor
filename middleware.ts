@@ -6,10 +6,10 @@ export function middleware(request: NextRequest) {
   const hostname = request.headers.get("host");
 
   // Check if the hostname is deconstructor.vercel.app
-  if (hostname === "deconstructor.vercel.app") {
+  if (hostname === "deconstructor.vercel.app" || hostname === "deconstructor.ayush.digital") {
     // Create the URL for the new domain, preserving the path and query parameters
     const url = new URL(request.url);
-    const newUrl = `https://deconstructor.ayush.digital${url.pathname}${url.search}`;
+    const newUrl = `https://deconstructor.app${url.pathname}${url.search}`;
 
     // Return a redirect response
     return NextResponse.redirect(newUrl, {

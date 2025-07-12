@@ -2,10 +2,14 @@ import { getAllCachedWords } from "@/utils/static-data";
 import { MetadataRoute } from "next";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://deconstructor.vercel.app";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://deconstructor.app";
   
   // Get all cached words
   const cachedWords = await getAllCachedWords();
+
+  console.log("cachedWords");
+  console.log(cachedWords.length);
+  console.log(cachedWords);
   
   // Create sitemap entries for each word
   const wordEntries: MetadataRoute.Sitemap = cachedWords.map((wordData) => ({

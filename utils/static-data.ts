@@ -21,7 +21,6 @@ export async function getAllCachedWords(): Promise<CachedWord[]> {
     const { data, error } = await supabase
       .from("deconstructions")
       .select("word, graph, created_at, updated_at, requests")
-      .order("requests", { ascending: false }); // Order by popularity
 
     if (error) {
       console.error("Error fetching cached words:", error);
@@ -105,6 +104,11 @@ export async function getCachedWordData(word: string): Promise<CachedWord | null
  */
 export async function getStaticWordPaths(): Promise<{ word: string }[]> {
   const cachedWords = await getAllCachedWords();
+
+  console.log("cachedWords");
+  console.log(cachedWords.length);
+  console.log(cachedWords);
+
   return cachedWords.map(item => ({
     word: item.word
   }));
@@ -132,7 +136,7 @@ export function generateWordMetadata(wordData: CachedWord) {
   const detailedDescription = `Explore the etymology of "${word}" - ${finalDefinition}. This word consists of ${graph.parts.length} parts from ${origins.join(" and ")} origins: ${graph.parts.map(p => `"${p.text}" (${p.originalWord}: ${p.meaning})`).join(", ")}. Interactive linguistic analysis with visual word breakdown.`;
 
   return {
-    title: `${word.charAt(0).toUpperCase() + word.slice(1)} Etymology: Origins & Meaning | Word Deconstructor`,
+    title: `${word.charAt(0).toUpperCase() + word.slice(1)} Etymology: Origins & Meaning | Deconstructor`,
     description: detailedDescription.length > 160 
       ? `Discover the etymology of "${word}": ${finalDefinition}. Interactive breakdown showing ${graph.parts.length} word parts from ${origins.join(", ")} origins.`
       : detailedDescription,
@@ -166,18 +170,11 @@ export function generateWordMetadata(wordData: CachedWord) {
       site: "@deconstructor", // Add your Twitter handle if you have one
     },
     alternates: {
-      canonical: `https://deconstructor.vercel.app/w/${encodeURIComponent(word).replace(/%20/g, "+")}`,
+      canonical: `https://deconstructor.app/w/${encodeURIComponent(word).replace(/%20/g, "+")}`,
     },
     robots: {
       index: true,
       follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
     },
   };
 }
@@ -203,13 +200,13 @@ export function generateWordStructuredData(wordData: CachedWord) {
       "description": "Interactive word etymology and deconstruction database"
     },
     "termCode": word,
-    "url": `https://deconstructor.vercel.app/w/${encodeURIComponent(word).replace(/%20/g, "+")}`,
+    "url": `https://deconstructor.app/w/${encodeURIComponent(word).replace(/%20/g, "+")}`,
     "dateCreated": wordData.created_at,
     "dateModified": wordData.updated_at,
     "creator": {
       "@type": "Organization",
       "name": "Word Deconstructor",
-      "url": "https://deconstructor.vercel.app"
+      "url": "https://deconstructor.app"
     },
     "mainEntity": {
       "@type": "Article",

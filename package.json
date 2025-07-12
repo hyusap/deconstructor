@@ -6,9 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generate-words": "bun run scripts/generate-top-words.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^1.2.12",
     "@ai-sdk/google": "^1.1.14",
     "@ai-sdk/openai": "^1.1.5",
     "@dagrejs/dagre": "^1.1.4",
@@ -21,7 +23,7 @@
     "@supabase/supabase-js": "^2.50.5",
     "@xyflow/react": "^12.4.2",
     "add": "^2.0.6",
-    "ai": "^4.1.11",
+    "ai": "^4.3.17",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "html-to-image": "^1.11.13",
