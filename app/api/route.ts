@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { openai } from "@ai-sdk/openai";
 import { google } from "@ai-sdk/google";
 import { z } from "zod";
+import { supabase } from "@/utils/supabase/client";
 // const openrouter = createOpenRouter({
 //   apiKey: process.env.OPENROUTER_API_KEY,
 // });
@@ -219,9 +220,142 @@ interface LastAttempt {
   output: WordOutput;
 }
 
+async function deconstructWord(word: string) {
+  const attempts: LastAttempt[] = [];
+  const maxAttempts = 3;
+
+  while (attempts.length < maxAttempts) {
+    const prompt: string =
+      attempts.length === 0
+        ? `Deconstruct the word: ${word}`
+        : `Deconstruct the word: ${word}
+
+Previous attempts:
+${attempts
+.map(
+  (attempt, index) => `
+Attempt ${index + 1}:
+${JSON.stringify(attempt.output, null, 2)}
+Errors:
+${attempt.errors.map((error) => `- ${error}`).join("\n")}
+`
+)
+.join("\n")}
+
+Please fix all the issues and try again.`;
+
+    console.log("prompt", prompt);
+    console.log("word", word);
+    console.log("attempts", attempts);
+
+    let model: string;
+    switch (attempts.length) {
+      case 0:
+        model = "gpt-4o-mini";
+        break;
+      default:
+        model = "gpt-4o";
+        break;
+    }
+
+    const result = await generateObject({
+      // model: openai(model),
+      // model: google("gemini-2.0-pro-exp-02-05"),
+      model: google("gemini-2.0-flash"),
+      system: `You are a linguistic expert that deconstructs words into their meaningful parts and explains their etymology. Create multiple layers of combinations to form the final meaning of the word.
+
+Schema Requirements:
+- thought: Think about the word/phrase, it's origins, and how it's put together. Eg. if it's a name, think about where the name comes from, etc.
+- parts: An array of word parts. The text sections of the parts MUST combine to form the original word, nothing more, nothing less.
+- id: Lowercase identifier for the word part, no spaces. Must be unique. If the word has the same part multiple times, give each one a different id. Cannot repeat ids from the combinations.
+- text: The EXACT section of the input word that this input part should be attached to. Be careful not to refernce the same letter multiple times across multiple parts.
+- originalWord: The original word or affix this part comes from. Use the ABSOLUTE oldest word or affix that this part comes from.
+- origin: Brief origin like "Latin", "Greek", "Old English"
+- meaning: Concise meaning of this word part
+- combinations: A Directed Acyclic Graph (DAG) that forms the original word
+- Each array represents a single layer of the DAG. If possible, keep the combinations in order of how they're used in the word within each layer. Try to use many useful intermediate combinations. If a word's origin isn't modern english, conver it to english as a combination, then use that combination as a source for the next layer.
+- Each combination contains:
+  - id: Lowercase identifier for the combination. Must be unique. If the word has the same combination multiple times, give each one a different id. Cannot repeat ids from the parts.
+  - text: The combined text segments
+  - definition: Clear definition of the combined parts
+  - sourceIds: Array of ids of the parts or combinations that form this
+- The last layer MUST only have one combination, which MUST be the original word
+
+Here's an example for the word "deconstructor":
+{
+"thought": "..."
+"parts": [
+  {
+    "id": "de",
+    "text": "de",
+    "originalWord": "de-",
+    "origin": "Latin",
+    "meaning": "down, off, away"
+  },
+  {
+    "id": "construc",
+    "text": "construc",
+    "originalWord": "construere",
+    "origin": "Latin",
+    "meaning": "to build, to pile up"
+  },
+  {
+    "id": "tor",
+    "text": "tor",
+    "originalWord": "-or",
+    "origin": "Latin",
+    "meaning": "agent noun, one who does an action"
+  }
+],
+"combinations": [
+  [
+    {
+      "id": "constructor",
+      "text": "constructor",
+      "definition": "one who constructs or builds",
+      "sourceIds": ["construc", "tor"]
+    }
+  ],
+  [
+    {
+      "id": "deconstructor",
+      "text": "deconstructor",
+      "definition": "one who takes apart or analyzes the construction of something",
+      "sourceIds": ["de", "constructor"]
+    }
+  ]
+]
+}`,
+      prompt,
+      schema: wordSchema,
+    });
+
+    const errors: string[] = [
+      ...validateWordParts(word, result.object.parts),
+      ...validateUniqueIds(result.object),
+      ...validateCombinations(word, result.object),
+    ];
+
+    attempts.push({
+      errors,
+      output: result.object,
+    });
+
+    if (errors.length > 0) {
+      console.log("validation errors:", errors);
+      continue;
+    } else {
+      break;
+    }
+  }
+
+  return attempts[attempts.length - 1];
+}
+
 export async function POST(req: Request) {
+  console.log("POST request received");
   try {
-    const { word } = await req.json();
+    const { word, update = false } = await req.json();
 
     if (!word || typeof word !== "string") {
       return NextResponse.json(
@@ -230,138 +364,50 @@ export async function POST(req: Request) {
       );
     }
 
-    const attempts: LastAttempt[] = [];
-    const maxAttempts = 3;
+    const cleanedWord = word.toLowerCase().trim();
 
-    while (attempts.length < maxAttempts) {
-      const prompt: string =
-        attempts.length === 0
-          ? `Deconstruct the word: ${word}`
-          : `Deconstruct the word: ${word}
+    const { data: existingGraph, error: existingGraphError } = await supabase.from("deconstructions").select("*").eq("word", cleanedWord).maybeSingle();
 
-Previous attempts:
-${attempts
-  .map(
-    (attempt, index) => `
-Attempt ${index + 1}:
-${JSON.stringify(attempt.output, null, 2)}
-Errors:
-${attempt.errors.map((error) => `- ${error}`).join("\n")}
-`
-  )
-  .join("\n")}
-
-Please fix all the issues and try again.`;
-
-      console.log("prompt", prompt);
-
-      let model: string;
-      switch (attempts.length) {
-        case 0:
-          model = "gpt-4o-mini";
-          break;
-        default:
-          model = "gpt-4o";
-          break;
-      }
-
-      const result = await generateObject({
-        // model: openai(model),
-        // model: google("gemini-2.0-pro-exp-02-05"),
-        model: google("gemini-2.0-flash"),
-        system: `You are a linguistic expert that deconstructs words into their meaningful parts and explains their etymology. Create multiple layers of combinations to form the final meaning of the word.
-
-Schema Requirements:
-- thought: Think about the word/phrase, it's origins, and how it's put together. Eg. if it's a name, think about where the name comes from, etc.
-- parts: An array of word parts. The text sections of the parts MUST combine to form the original word, nothing more, nothing less.
-  - id: Lowercase identifier for the word part, no spaces. Must be unique. If the word has the same part multiple times, give each one a different id. Cannot repeat ids from the combinations.
-  - text: The EXACT section of the input word that this input part should be attached to. Be careful not to refernce the same letter multiple times across multiple parts.
-  - originalWord: The original word or affix this part comes from. Use the ABSOLUTE oldest word or affix that this part comes from.
-  - origin: Brief origin like "Latin", "Greek", "Old English"
-  - meaning: Concise meaning of this word part
-- combinations: A Directed Acyclic Graph (DAG) that forms the original word
-  - Each array represents a single layer of the DAG. If possible, keep the combinations in order of how they're used in the word within each layer. Try to use many useful intermediate combinations. If a word's origin isn't modern english, conver it to english as a combination, then use that combination as a source for the next layer.
-  - Each combination contains:
-    - id: Lowercase identifier for the combination. Must be unique. If the word has the same combination multiple times, give each one a different id. Cannot repeat ids from the parts.
-    - text: The combined text segments
-    - definition: Clear definition of the combined parts
-    - sourceIds: Array of ids of the parts or combinations that form this
-  - The last layer MUST only have one combination, which MUST be the original word
-
-Here's an example for the word "deconstructor":
-{
-  "thought": "..."
-  "parts": [
-    {
-      "id": "de",
-      "text": "de",
-      "originalWord": "de-",
-      "origin": "Latin",
-      "meaning": "down, off, away"
-    },
-    {
-      "id": "construc",
-      "text": "construc",
-      "originalWord": "construere",
-      "origin": "Latin",
-      "meaning": "to build, to pile up"
-    },
-    {
-      "id": "tor",
-      "text": "tor",
-      "originalWord": "-or",
-      "origin": "Latin",
-      "meaning": "agent noun, one who does an action"
+    if (existingGraphError) {
+      console.error("Error fetching existing graph:", existingGraphError);
     }
-  ],
-  "combinations": [
-    [
-      {
-        "id": "constructor",
-        "text": "constructor",
-        "definition": "one who constructs or builds",
-        "sourceIds": ["construc", "tor"]
-      }
-    ],
-    [
-      {
-        "id": "deconstructor",
-        "text": "deconstructor",
-        "definition": "one who takes apart or analyzes the construction of something",
-        "sourceIds": ["de", "constructor"]
-      }
-    ]
-  ]
-}`,
-        prompt,
-        schema: wordSchema,
+
+    let attempt: LastAttempt;
+
+    if (update || !existingGraph) {
+      attempt = await deconstructWord(word);
+    } else {
+      attempt = {
+        errors: [],
+        output: existingGraph.graph,
+      };
+    }
+
+
+
+
+    if (update) {
+      const { data, error } = await supabase.from("deconstructions").upsert({
+        id: existingGraph?.id,
+        word,
+        graph: attempt.output,
+        requests: 1,
       });
 
-      const errors: string[] = [
-        ...validateWordParts(word, result.object.parts),
-        ...validateUniqueIds(result.object),
-        ...validateCombinations(word, result.object),
-      ];
-
-      if (errors.length > 0) {
-        console.log("validation errors:", errors);
-        attempts.push({
-          errors,
-          output: result.object,
-        });
-        continue;
+      if (error) {
+        console.error("Error saving to database:", error);
       }
+    }
 
-      // Simplify the DAG before returning
-      // const simplifiedResult = simplifyDAG(result.object);
-      return NextResponse.json(result.object);
+    if (attempt.errors.length === 0) {
+      return NextResponse.json(attempt.output);
     }
 
     // Return the last attempt anyway
-    return NextResponse.json(attempts[attempts.length - 1]?.output, {
+    return NextResponse.json(attempt.output, {
       status: 203,
     });
-  } catch (error) {
+    } catch (error) { 
     console.error("Error generating word deconstruction:", error);
     return NextResponse.json(
       { error: "Failed to generate word deconstruction" },

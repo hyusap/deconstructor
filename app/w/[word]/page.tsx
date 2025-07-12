@@ -1,4 +1,18 @@
 import WordDeconstructor from "@/components/deconstructor";
+import { supabase } from "@/utils/supabase/client";
+
+export async function generateStaticParams() {
+  const { data, error } = await supabase.from("deconstructions").select();
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data.map((deconstruction) => ({
+    word: deconstruction.word,
+  }));
+}
 
 export default async function WordPage({
   params,
