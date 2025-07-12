@@ -432,7 +432,7 @@ const nodeTypes = {
   inputNode: InputNode,
 };
 
-function Deconstructor({ word }: { word?: string }) {
+function Deconstructor({ word, staticData }: { word?: string; staticData?: Definition }) {
   const [isLoading, setIsLoading] = useAtom(isLoadingAtom);
   const [definition, setDefinition] = useState<Definition>(defaultDefinition);
   const [wordCount, setWordCount] = useLocalStorage(
@@ -509,7 +509,13 @@ function Deconstructor({ word }: { word?: string }) {
     }
   };
 
+  // Initialize with static data if available
   useEffect(() => {
+    if (staticData && word) {
+      setDefinition(staticData);
+      return;
+    }
+    
     async function fetchDefinition() {
       if (word) {
         setIsLoading(true);
@@ -518,7 +524,7 @@ function Deconstructor({ word }: { word?: string }) {
       }
     }
     fetchDefinition();
-  }, [word]);
+  }, [word, staticData]);
 
   const { initialNodes, initialEdges } = useMemo(
     () =>
@@ -585,7 +591,7 @@ function Deconstructor({ word }: { word?: string }) {
   );
 }
 
-export default function WordDeconstructor({ word }: { word?: string }) {
+export default function WordDeconstructor({ word, staticData }: { word?: string; staticData?: Definition }) {
   const [isLoading] = useAtom(isLoadingAtom);
   const [wordCount] = useLocalStorage("deconstructedWordsCount", 0);
 
@@ -598,7 +604,7 @@ export default function WordDeconstructor({ word }: { word?: string }) {
     >
       <div className="h-full w-full">
         <ReactFlowProvider>
-          <Deconstructor word={word} />
+          <Deconstructor word={word} staticData={staticData} />
         </ReactFlowProvider>
       </div>
       <div

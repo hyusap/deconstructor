@@ -1,17 +1,40 @@
 import WordDeconstructor from "@/components/deconstructor";
-import { supabase } from "@/utils/supabase/client";
+import { getStaticWordPaths, getCachedWordData, generateWordMetadata } from "@/utils/static-data";
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 export async function generateStaticParams() {
-  const { data, error } = await supabase.from("deconstructions").select();
-
-  if (error) {
-    console.error(error);
+  try {
+    const paths = await getStaticWordPaths();
+    return paths;
+  } catch (error) {
+    console.error("Error generating static params:", error);
     return [];
   }
+}
 
-  return data.map((deconstruction) => ({
-    word: deconstruction.word,
-  }));
+export async function generateMetadata({ 
+  params 
+}: { 
+  params: Promise<{ word: string }> 
+}): Promise<Metadata> {
+  const word = (await params).word;
+  
+  // Decode URL-encoded and plus-encoded characters
+  let decodedWord = word.replace(/%2B/gi, " ");
+  decodedWord = decodedWord.replace(/\+/gi, " ");
+  decodedWord = decodeURIComponent(decodedWord);
+  
+  const wordData = await getCachedWordData(decodedWord);
+  
+  if (!wordData) {
+    return {
+      title: `${decodedWord.charAt(0).toUpperCase() + decodedWord.slice(1)} - Word Deconstructor`,
+      description: `Explore the etymology and linguistic breakdown of "${decodedWord}".`,
+    };
+  }
+  
+  return generateWordMetadata(wordData);
 }
 
 export default async function WordPage({
@@ -31,5 +54,18 @@ export default async function WordPage({
   decodedWord = decodeURIComponent(decodedWord);
   console.log("decodedWord", decodedWord);
 
-  return <WordDeconstructor word={decodedWord} />;
+  // Fetch static data for this word
+  const staticWordData = await getCachedWordData(decodedWord);
+  
+  // If we have static data but the word doesn't exist, show 404
+  if (word !== decodedWord && !staticWordData) {
+    notFound();
+  }
+
+  return (
+    <WordDeconstructor 
+      word={decodedWord} 
+      staticData={staticWordData?.graph}
+    />
+  );
 }
