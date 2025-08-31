@@ -460,20 +460,22 @@ function Deconstructor({ word, staticData }: { word?: string; staticData?: Defin
     "emailSubmitted",
     false
   );
+  const [messagesSincePrompt, setMessagesSincePrompt] = useLocalStorage(
+    "messagesSincePrompt",
+    0
+  );
+  const [dismissCount, setDismissCount] = useLocalStorage(
+    "emailDialogDismissCount",
+    0
+  );
   const [showEmailDialog, setShowEmailDialog] = useState<boolean>(false);
   const plausible = usePlausible();
 
-  // Check if input should be disabled (5+ words and email not submitted)
-  const isInputDisabled = wordCount >= 5 && !emailSubmitted;
+  // Input is no longer disabled based on email submission
+  const isInputDisabled = false;
 
   const handleWordSubmit = async (word: string, forceUpdate = false) => {
     console.log("handleWordSubmit", word, "forceUpdate:", forceUpdate);
-
-    // Prevent further deconstruction if email not submitted after 5 words
-    if (isInputDisabled) {
-      setShowEmailDialog(true);
-      return;
-    }
 
     try {
       // Update URL without navigation
@@ -516,14 +518,39 @@ function Deconstructor({ word, staticData }: { word?: string; staticData?: Defin
         },
       });
 
-      // Increment word count and check if we need to show the email dialog
+      // Increment word count and messages since prompt
       const newCount = wordCount + 1;
       setWordCount(newCount);
+      
+      // Increment messages since last prompt
+      const newMessageCount = messagesSincePrompt + 1;
+      setMessagesSincePrompt(newMessageCount);
 
-      // Check if user has deconstructed 5 words and hasn't submitted email yet
-      if (newCount >= 5 && !emailSubmitted) {
-        setShowEmailDialog(true);
-        plausible("email_prompt_shown");
+      // Check if we should show the email dialog
+      if (!emailSubmitted) {
+        // First time: show at 5 words
+        if (newCount === 5) {
+          setShowEmailDialog(true);
+          setMessagesSincePrompt(0); // Reset counter
+          plausible("email_prompt_shown", {
+            props: {
+              trigger: "initial",
+              wordCount: newCount
+            }
+          });
+        }
+        // Subsequent times: show every 5 messages
+        else if (newCount > 5 && newMessageCount >= 5) {
+          setShowEmailDialog(true);
+          setMessagesSincePrompt(0); // Reset counter
+          plausible("email_prompt_shown", {
+            props: {
+              trigger: "recurring",
+              wordCount: newCount,
+              dismissCount: dismissCount
+            }
+          });
+        }
       }
 
       setDefinition(newDefinition);
@@ -619,13 +646,19 @@ function Deconstructor({ word, staticData }: { word?: string; staticData?: Defin
         open={showEmailDialog}
         onOpenChange={(open) => {
           setShowEmailDialog(open);
-          if (!open) {
-            setEmailSubmitted(true);
-            // refresh the page
-            window.location.reload();
+          if (!open && !emailSubmitted) {
+            // User dismissed without submitting
+            setDismissCount(dismissCount + 1);
+            plausible("email_prompt_dismissed", {
+              props: {
+                dismissCount: dismissCount + 1,
+                wordCount: wordCount
+              }
+            });
           }
         }}
         wordCount={wordCount}
+        dismissCount={dismissCount}
       />
     </>
   );

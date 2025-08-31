@@ -39,12 +39,14 @@ interface EmailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   wordCount: number;
+  dismissCount?: number;
 }
 
 export function EmailDialog({
   open,
   onOpenChange,
   wordCount,
+  dismissCount = 0,
 }: EmailDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [_, setEmailSubmitted] = useLocalStorage("emailSubmitted", false);
@@ -71,8 +73,10 @@ export function EmailDialog({
       // Store in localStorage that the user has submitted their email
       setEmailSubmitted(true);
 
-      // Close the dialog
+      // Close the dialog and trigger reload
       onOpenChange(false);
+      // Reload page to update UI state
+      window.location.reload();
     } catch (error) {
       console.error("Error submitting email:", error);
     } finally {
@@ -83,29 +87,19 @@ export function EmailDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={(newOpen) => {
-        // Only allow closing if email has been submitted
-        if (newOpen === false && !form.formState.isSubmitSuccessful) {
-          return;
-        }
-        onOpenChange(newOpen);
-      }}
+      onOpenChange={onOpenChange}
     >
       <DialogContent
-        className={cn(
-          "sm:max-w-[425px] bg-gray-800 border border-gray-700/50 text-gray-100",
-          "[&>button]:hidden" // Hide the close button
-        )}
-        onPointerDownOutside={(e) => e.preventDefault()} // Prevent closing on outside click
-        onEscapeKeyDown={(e) => e.preventDefault()} // Prevent closing on Escape key
+        className="sm:max-w-[425px] bg-gray-800 border border-gray-700/50 text-gray-100"
       >
         <DialogHeader>
           <DialogTitle className="text-2xl font-serif">
-            Word Explorer Milestone!
+            {dismissCount > 0 ? "Still interested in updates?" : "Word Explorer Milestone!"}
           </DialogTitle>
           <DialogDescription className="text-gray-300">
-            You&apos;ve deconstructed {wordCount} words! Enter your email to
-            continue your language journey and get notified about new features.
+            {dismissCount > 0 
+              ? `You've now deconstructed ${wordCount} words! We'd love to keep you updated on new features and improvements.`
+              : `You've deconstructed ${wordCount} words! Enter your email to continue your language journey and get notified about new features.`}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
