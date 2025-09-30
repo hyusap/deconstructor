@@ -1,5 +1,10 @@
 import WordDeconstructor from "@/components/deconstructor";
-import { getStaticWordPaths, getCachedWordData, generateWordMetadata, generateWordStructuredData } from "@/utils/static-data";
+import {
+  getStaticWordPaths,
+  getCachedWordData,
+  generateWordMetadata,
+  generateWordStructuredData,
+} from "@/utils/static-data";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -13,27 +18,29 @@ export async function generateStaticParams() {
   }
 }
 
-export async function generateMetadata({ 
-  params 
-}: { 
-  params: Promise<{ word: string }> 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ word: string }>;
 }): Promise<Metadata> {
   const word = (await params).word;
-  
+
   // Decode URL-encoded and plus-encoded characters
   let decodedWord = word.replace(/%2B/gi, " ");
   decodedWord = decodedWord.replace(/\+/gi, " ");
   decodedWord = decodeURIComponent(decodedWord);
-  
+
   const wordData = await getCachedWordData(decodedWord);
-  
+
   if (!wordData) {
     return {
-      title: `${decodedWord.charAt(0).toUpperCase() + decodedWord.slice(1)} - Word Deconstructor`,
+      title: `${
+        decodedWord.charAt(0).toUpperCase() + decodedWord.slice(1)
+      } - Word Deconstructor`,
       description: `Explore the etymology and linguistic breakdown of "${decodedWord}".`,
     };
   }
-  
+
   return generateWordMetadata(wordData);
 }
 
@@ -56,11 +63,11 @@ export default async function WordPage({
 
   // Fetch static data for this word
   const staticWordData = await getCachedWordData(decodedWord);
-  
-  // If we have static data but the word doesn't exist, show 404
-  if (word !== decodedWord && !staticWordData) {
-    notFound();
-  }
+
+  // // If we have static data but the word doesn't exist, show 404
+  // if (word !== decodedWord && !staticWordData) {
+  //   notFound();
+  // }
 
   return (
     <>
@@ -72,8 +79,8 @@ export default async function WordPage({
           }}
         />
       )}
-      <WordDeconstructor 
-        word={decodedWord} 
+      <WordDeconstructor
+        word={decodedWord}
         staticData={staticWordData?.graph}
       />
     </>

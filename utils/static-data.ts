@@ -107,7 +107,7 @@ export async function getStaticWordPaths(): Promise<{ word: string }[]> {
 
   console.log("cachedWords");
   console.log(cachedWords.length);
-  console.log(cachedWords);
+  // console.log(cachedWords);
 
   return cachedWords.map(item => ({
     word: item.word
