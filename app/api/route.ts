@@ -378,20 +378,11 @@ export async function POST(req: Request) {
 
     if (update || !existingGraph) {
       attempt = await deconstructWord(word);
-    } else {
-      attempt = {
-        errors: [],
-        output: existingGraph.graph,
-      };
-    }
 
-
-
-
-    if (update) {
+      // Save new generation to Supabase
       const { data, error } = await supabase.from("deconstructions").upsert({
         id: existingGraph?.id,
-        word,
+        word: cleanedWord,
         graph: attempt.output,
         requests: 1,
       });
@@ -399,6 +390,11 @@ export async function POST(req: Request) {
       if (error) {
         console.error("Error saving to database:", error);
       }
+    } else {
+      attempt = {
+        errors: [],
+        output: existingGraph.graph,
+      };
     }
 
     if (attempt.errors.length === 0) {
