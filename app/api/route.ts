@@ -262,8 +262,8 @@ Please fix all the issues and try again.`;
     const result = await generateObject({
       // model: openai(model),
       // model: google("gemini-2.0-pro-exp-02-05"),
-      model: google("gemini-2.5-flash"),
-      // model: anthropic("claude-sonnet-4-20250514"), 
+      // model: google("gemini-2.5-flash"),
+      model: anthropic("claude-sonnet-4-5-20250929"), 
       system: `You are a linguistic expert that deconstructs words into their meaningful parts and explains their etymology. Create multiple layers of combinations to form the final meaning of the word.
 
 Schema Requirements:
