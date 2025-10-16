@@ -9,15 +9,14 @@ A beautiful and interactive web application that deconstructs words into their m
 - 📚 Detailed etymology and meaning breakdowns
 - 🎨 Dark mode
 - ⚡ Real-time updates and animations
-- 🧠 AI-powered word deconstruction using OpenRouter API
+- 🧠 AI-powered word deconstruction using Claude Sonnet 4.5
 
 ## Prerequisites
 
 Before you begin, ensure you have:
 
 - Node.js 18+ installed
-- An OpenRouter API key (get one at [OpenRouter](https://openrouter.ai))
-- A Google Gemini API key (get one at [Google AI Studio](https://aistudio.google.com/app/apikey))
+- An Anthropic API key (get one at [Anthropic Console](https://console.anthropic.com/))
 
 ## Getting Started
 
@@ -40,13 +39,10 @@ bun install
 cp example.env .env.local
 ```
 
-Then edit `.env.local` and add your API keys:
+Then edit `.env.local` and add your API key:
 ```env
-# Get your OpenRouter API key from https://openrouter.ai/
-OPENROUTER_API_KEY=your_openrouter_api_key_here
-
-# Get your Gemini API key from https://aistudio.google.com/app/apikey
-GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key_here
+# Get your Anthropic API key from https://console.anthropic.com/
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
 ```
 
 
@@ -57,6 +53,27 @@ bun dev
 ```
 
 5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## Switching AI Models
+
+The project currently uses **Anthropic's Claude Sonnet 4.5** as the default model, but supports any provider through the Vercel AI SDK. To switch models:
+
+1. Open `app/api/route.ts`
+2. Find line 266 where the model is configured
+3. Comment out the current model and uncomment your preferred option:
+
+```typescript
+// Option 1: Anthropic Claude (current default)
+model: anthropic("claude-sonnet-4-5-20250929"),
+
+// Option 2: OpenAI (requires OPENAI_API_KEY)
+// model: openai("gpt-4o"),
+// model: openai("gpt-4o-mini"),
+```
+
+4. Add the corresponding API key to your `.env.local` file
+
+For other providers (Google Gemini, Mistral, etc.), see the [Vercel AI SDK Providers documentation](https://ai-sdk.dev/docs/foundations/providers-and-models)
 
 ## How It Works
 
@@ -75,7 +92,7 @@ The Word Deconstructor breaks down words into their constituent parts:
 - [Next.js](https://nextjs.org/) - React framework
 - [React Flow](https://reactflow.dev/) - Graph visualization
 - [Tailwind CSS](https://tailwindcss.com/) - Styling
-- [OpenRouter AI](https://openrouter.ai/) - AI-powered word analysis
+- [Anthropic Claude](https://www.anthropic.com/) - AI-powered word analysis
 - [TypeScript](https://www.typescriptlang.org/) - Type safety
 - [Jotai](https://jotai.org/) - State management
 
