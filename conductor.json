@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "setup": "bun run scripts/conductor-setup.ts",
+    "run": "bun dev --turbopack"
+  },
+  "runScriptMode": "nonconcurrent"
+}
