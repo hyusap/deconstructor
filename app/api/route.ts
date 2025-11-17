@@ -22,7 +22,7 @@ function validateWordParts(word: string, parts: WordOutput["parts"]): string[] {
   const combinedParts = parts.map((p) => p.text).join("");
   const commaSeparatedParts = parts.map((p) => p.text).join(", ");
 
-  if (combinedParts.toLowerCase() !== word.toLowerCase().replaceAll(" ", "")) {
+  if (combinedParts.toLowerCase() !== word.toLowerCase()) {
     errors.push(
       `The parts "${commaSeparatedParts}" do not combine to form the word "${word}"`
     );
