@@ -34,7 +34,7 @@ const WordChunkNode = ({ data }: { data: { text: string } }) => {
         isLoading ? "opacity-0 blur-[20px]" : ""
       }`}
     >
-      <div className="text-5xl font-serif mb-1">{data.text}</div>
+      <div className="text-5xl font-serif mb-1 whitespace-pre">{data.text}</div>
       <div className="w-full h-3 border border-t-0 border-white" />
       <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
     </div>
@@ -55,7 +55,7 @@ const OriginNode = ({
     >
       <div className="px-4 py-2 rounded-lg bg-gray-800 border border-gray-700/50 min-w-fit max-w-[180px]">
         <div className="flex flex-col items-start">
-          <p className="text-lg font-serif mb-1 whitespace-nowrap">
+          <p className="text-lg font-serif mb-1 whitespace-pre">
             {data.originalWord}
           </p>
           <p className="text-xs text-gray-400 w-full">{data.origin}</p>
@@ -82,7 +82,7 @@ const CombinedNode = ({
     >
       <div className="px-4 py-2 rounded-lg bg-gray-800 border border-gray-700/50 min-w-fit max-w-[250px]">
         <div className="flex flex-col items-start">
-          <p className="text-xl font-serif mb-1 whitespace-nowrap">
+          <p className="text-xl font-serif mb-1 whitespace-pre">
             {data.text}
           </p>
           <p className="text-sm text-gray-300 w-full">{data.definition}</p>
