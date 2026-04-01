@@ -1,15 +1,12 @@
 import { generateObject } from "ai";
-// import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { wordSchema } from "@/utils/schema";
 import { NextResponse } from "next/server";
-import { openai } from "@ai-sdk/openai";
-import { google } from "@ai-sdk/google";
-import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { supabase } from "@/utils/supabase/client";
-// const openrouter = createOpenRouter({
-//   apiKey: process.env.OPENROUTER_API_KEY,
-// });
+const openrouter = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
 
 // Define the schema for word parts and combinations
 
@@ -260,10 +257,7 @@ Please fix all the issues and try again.`;
     }
 
     const result = await generateObject({
-      // model: openai(model),
-      // model: google("gemini-2.0-pro-exp-02-05"),
-      // model: google("gemini-2.5-flash"),
-      model: anthropic("claude-sonnet-4-5-20250929"), 
+      model: openrouter("nvidia/nemotron-3-super-120b-a12b:free"),
       system: `You are a linguistic expert that deconstructs words into their meaningful parts and explains their etymology. Create multiple layers of combinations to form the final meaning of the word.
 
 Schema Requirements:
